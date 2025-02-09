@@ -1,4 +1,10 @@
-# {{ title }}
+---
+layout: post
+title: {{ title }}
+date: {{ date }}
+author: {{ author }}
+categories: [{{ tags|join(", ") }}]
+---
 
 {{ description }}
 
@@ -15,16 +21,8 @@
 {% endif %}
 
 {% if explanation %}
-## Explanation
+## Understanding the Code
 {{ explanation }}
-{% endif %}
-
-{% if use_cases %}
-## Use Cases
-{% for case in use_cases %}
-### {{ case.title }}
-{{ case.description }}
-{% endfor %}
 {% endif %}
 
 {% if conclusion %}
@@ -33,4 +31,4 @@
 {% endif %}
 
 ---
-*Written by {{ author }} on {{ date }}*
+*Written by {{ author }}*
