@@ -1,0 +1,19 @@
+title: "Understanding Python Decorators"
+author: "Your Name"
+tags:
+  - python
+  - programming
+  - decorators
+data:
+  title: "Understanding Python Decorators"
+  description: "A deep dive into Python decorators and their practical applications"
+  language: "python"
+  introduction: "Decorators are a powerful feature in Python that allows you to modify the behavior of functions and classes."
+  code_example: |
+    @timer
+    def expensive_operation():
+        # Simulating a time-consuming operation
+        time.sleep(2)
+        return "Operation completed"
+  explanation: "When you use a decorator, you're essentially wrapping one function with another. This allows you to add functionality before, after, or around the original function."
+  conclusion: "Decorators provide a clean and reusable way to modify or enhance functions and classes in Python."

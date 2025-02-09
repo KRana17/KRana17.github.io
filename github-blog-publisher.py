@@ -1,159 +1,133 @@
+from dotenv import load_dotenv
 import os
-import yaml
-import datetime
-from github import Github
+import sys
 from pathlib import Path
-from typing import Dict, List, Optional
-import frontmatter
-import markdown2
 
-class BlogPost:
-    """Represents a blog post with metadata and content."""
+# Import our custom classes for blog publishing
+from src.publisher.blog_post import BlogPost
+from src.publisher.github_publisher import GitHubBlogPublisher
+from src.publisher.blog_generator import BlogGenerator
+
+def verify_environment():
+    """
+    Verify that all required environment variables and directories exist.
+    Returns tuple of (token, repo_name) if successful.
+    """
+    # Load environment variables from .env file
+    load_dotenv()
     
-    def __init__(self, title: str, content: str, tags: List[str], 
-                 date: Optional[datetime.datetime] = None):
-        self.title = title
-        self.content = content
-        self.tags = tags
-        self.date = date or datetime.datetime.now()
-        
-    def to_markdown(self) -> str:
-        """Convert the blog post to markdown format with frontmatter."""
-        metadata = {
-            'title': self.title,
-            'date': self.date.strftime('%Y-%m-%d'),
-            'tags': self.tags
-        }
-        
-        return f"""---
-{yaml.dump(metadata)}---
-
-{self.content}
-"""
-
-class GitHubBlogPublisher:
-    """Handles publishing blog posts to GitHub Pages."""
+    # Get GitHub token from environment
+    token = os.getenv('GITHUB_TOKEN')
+    if not token:
+        raise ValueError("GITHUB_TOKEN not found in environment variables. "
+                       "Please add it to your .env file.")
     
-    def __init__(self, repo_name: str, token: str, 
-                 branch: str = 'main', posts_dir: str = '_posts'):
-        self.github = Github(token)
-        self.repo = self.github.get_user().get_repo(repo_name)
-        self.branch = branch
-        self.posts_dir = posts_dir
-        
-    def create_post_filename(self, post: BlogPost) -> str:
-        """Generate a filename for the blog post."""
-        date_prefix = post.date.strftime('%Y-%m-%d')
-        # Convert title to URL-friendly slug
-        slug = post.title.lower().replace(' ', '-')
-        return f"{date_prefix}-{slug}.md"
-        
-    def publish_post(self, post: BlogPost) -> str:
-        """Publish a blog post to GitHub Pages."""
-        try:
-            # Generate the post content
-            content = post.to_markdown()
-            
-            # Create the file path
-            filename = self.create_post_filename(post)
-            file_path = f"{self.posts_dir}/{filename}"
-            
-            # Get the current commit SHA
-            ref = self.repo.get_git_ref(f"heads/{self.branch}")
-            latest_commit = self.repo.get_git_commit(ref.object.sha)
-            
-            # Create blob with post content
-            blob = self.repo.create_git_blob(content, "utf-8")
-            
-            # Create tree with the new file
-            element = InputGitTreeElement(
-                path=file_path,
-                mode='100644',
-                type='blob',
-                sha=blob.sha
-            )
-            tree = self.repo.create_git_tree([element], base_tree=latest_commit.tree)
-            
-            # Create commit
-            commit = self.repo.create_git_commit(
-                message=f"Add blog post: {post.title}",
-                tree=tree,
-                parents=[latest_commit]
-            )
-            
-            # Update branch reference
-            ref.edit(commit.sha)
-            
-            return f"Successfully published: {filename}"
-            
-        except Exception as e:
-            raise Exception(f"Failed to publish post: {str(e)}")
-
-class BlogGenerator:
-    """Generates blog post content from templates and data."""
+    # Get repository name from environment
+    repo_name = os.getenv('GITHUB_REPO')
+    if not repo_name:
+        raise ValueError("GITHUB_REPO not found in environment variables. "
+                       "Please add it to your .env file.")
     
-    def __init__(self, templates_dir: str = 'templates'):
-        self.templates_dir = Path(templates_dir)
-        
-    def load_template(self, template_name: str) -> str:
-        """Load a blog post template from file."""
-        template_path = self.templates_dir / f"{template_name}.md"
-        if not template_path.exists():
-            raise FileNotFoundError(f"Template not found: {template_name}")
-            
-        with open(template_path, 'r') as f:
-            return f.read()
-            
-    def generate_post(self, template_name: str, 
-                     data: Dict[str, str], 
-                     tags: List[str]) -> BlogPost:
-        """Generate a blog post from a template and data."""
-        template = self.load_template(template_name)
-        
-        # Replace placeholders in template
-        content = template
-        for key, value in data.items():
-            content = content.replace(f"{{${key}}}", value)
-            
-        return BlogPost(
-            title=data.get('title', 'Untitled Post'),
-            content=content,
-            tags=tags
+    # Clean repository name (remove URL parts if present)
+    if '/' in repo_name:
+        repo_name = repo_name.split('/')[-1]
+    if '.git' in repo_name:
+        repo_name = repo_name.replace('.git', '')
+    
+    return token, repo_name
+
+def verify_directory_structure():
+    """
+    Verify that all required directories exist and create them if needed.
+    """
+    # Define required directories
+    required_dirs = [
+        'posts/templates',
+        '_posts',
+        'posts/drafts'
+    ]
+    
+    # Create directories if they don't exist
+    for directory in required_dirs:
+        Path(directory).mkdir(parents=True, exist_ok=True)
+    
+    # Verify template exists
+    template_path = Path('posts/templates/technical-post.md')
+    if not template_path.exists():
+        raise FileNotFoundError(
+            f"Template file not found at {template_path}. "
+            "Please create the template file first."
         )
 
 def main():
-    """Example usage of the blog publishing system."""
-    # Initialize the publisher with your GitHub token
-    token = os.getenv('GITHUB_TOKEN')
-    publisher = GitHubBlogPublisher(
-        repo_name='dev-blog',
-        token=token
-    )
-    
-    # Initialize the blog generator
-    generator = BlogGenerator()
-    
-    # Example data for a blog post
-    post_data = {
-        'title': 'Understanding Python Decorators',
-        'description': 'A deep dive into Python decorators and their use cases',
-        'code_example': '''
+    """
+    Main function to demonstrate the blog publishing system.
+    """
+    try:
+        print("Starting blog publishing process...")
+        
+        # Step 1: Verify environment and directory structure
+        print("Verifying environment and directories...")
+        token, repo_name = verify_environment()
+        verify_directory_structure()
+        
+        # Step 2: Initialize our components
+        print("Initializing publisher and generator...")
+        publisher = GitHubBlogPublisher(
+            repo_name=repo_name,
+            token=token
+        )
+        
+        generator = BlogGenerator(templates_dir='posts/templates')
+        
+        # Step 3: Prepare blog post data
+        # Note: Using raw string (r) prefix to handle special characters
+        print("Preparing blog post data...")
+        code_example = r"""
 @timer
 def expensive_operation():
-    # ... code here
-    pass
-'''
-    }
-    
-    # Generate and publish the post
-    post = generator.generate_post(
-        template_name='technical-post',
-        data=post_data,
-        tags=['python', 'programming', 'decorators']
-    )
-    
-    result = publisher.publish_post(post)
-    print(result)
+    # Example operation
+    time.sleep(2)
+    return \"Operation completed\"
+"""
+        
+        post_data = {
+            "title": "Understanding Python Decorators",
+            "language": "python",
+            "code_example": code_example.strip(),
+            "description": "A deep dive into Python decorators",
+            "introduction": "Decorators are a powerful feature in Python that allows you to modify function behavior.",
+            "explanation": "When you use a decorator, you are essentially wrapping one function with another.",
+            "conclusion": "Decorators provide a clean and reusable way to modify function behavior."
+        }
+        
+        # Step 4: Generate the post
+        print("Generating blog post from template...")
+        post = generator.generate_post(
+            template_name='technical-post',
+            data=post_data,
+            tags=['python', 'programming', 'decorators'],
+            author='Your Name',
+            title=post_data['title'],
+            description=post_data['description']
+        )
+        
+        # Step 5: Publish the post
+        print("Publishing post to GitHub...")
+        result = publisher.publish_post(post)
+        print(f"Success! {result}")
+        
+    except Exception as e:
+        print(f"\nError: {str(e)}")
+        print("\nTroubleshooting steps:")
+        print("1. Check your .env file contains:")
+        print("   GITHUB_TOKEN=your_token_here")
+        print("   GITHUB_REPO=test-blog")
+        print("2. Ensure all required directories exist:")
+        print("   - posts/templates/")
+        print("   - _posts/")
+        print("3. Verify your GitHub token has repository access")
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
