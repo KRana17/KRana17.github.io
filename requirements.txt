@@ -1,0 +1,33 @@
+# Core dependencies
+PyGithub>=2.1.1          # GitHub API interaction
+PyYAML>=6.0.1           # YAML processing for frontmatter
+python-frontmatter>=1.0.0  # Handle blog post frontmatter
+markdown2>=2.4.10        # Markdown processing
+Jinja2>=3.1.2           # Template engine
+
+# Development dependencies
+pytest>=7.4.0           # Testing framework
+pytest-cov>=4.1.0       # Test coverage reporting
+black>=23.7.0           # Code formatting
+pylint>=2.17.5          # Code linting
+mypy>=1.5.1            # Type checking
+
+# Documentation
+Sphinx>=7.1.2          # Documentation generator
+sphinx-rtd-theme>=1.3.0  # Documentation theme
+
+# Utilities
+python-dotenv>=1.0.0    # Environment variable management
+requests>=2.31.0        # HTTP requests
+typing-extensions>=4.7.1 # Enhanced type hints
+rich>=13.5.2           # Rich text and formatting in terminal
+
+# Development tools
+pre-commit>=3.3.3       # Git hooks for code quality
+tox>=4.6.4             # Test automation
+invoke>=2.2.0          # Task execution
+
+# Optional dependencies
+bleach>=6.0.0          # HTML sanitization
+beautifulsoup4>=4.12.2  # HTML parsing
+python-slugify>=8.0.1   # URL slug generation
