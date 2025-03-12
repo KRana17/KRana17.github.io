@@ -1,6 +1,6 @@
 ---
 layout: home
-title: Welcome to My Tech Blog
+
 list_title: Latest Posts
 ---
 
