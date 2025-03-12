@@ -4,7 +4,7 @@ description: A blog about programming and technology
 author: Your Name
 
 # GitHub Pages settings (these are crucial for proper deployment)
-baseurl: "/test-blog"  # Required - must match your repository name
+baseurl: ""  # Changed from "/test-blog" to "" for root domain
 url: "https://KRana17.github.io"  # Required - your GitHub Pages URL
 
 # Theme settings
