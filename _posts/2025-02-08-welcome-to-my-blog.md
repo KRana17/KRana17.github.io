@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "Welcome to My Blog"
+title: ""
 date: 2025-02-08
 categories: general
-author: Your Name
+author: Khevna
 ---
 
 This is my first blog post! I'm excited to share my journey in technology and programming.
