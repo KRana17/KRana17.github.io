@@ -17,7 +17,7 @@ In the realm of Python programming, decorators emerge as indispensable tools for
 
 ### Main Content
 
-A decorator, in essence, is a function that wraps around another function, modifying its functionality. It is defined using the `@` syntax, placed immediately before the function it modifies. For example:
+A decorator, in essence, is a function that wraps around another function, modifying its functionality. It is defined using the `@` syntax, placed immediately before the function it modifies. For ex:
 
 ```python
 def my_decorator(func):
