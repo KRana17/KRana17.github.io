@@ -1,7 +1,7 @@
 # Site settings
 title: My Tech Blog
 description: A blog about programming and technology
-author: Your Name
+author: Khevna Rana
 
 # GitHub Pages settings (these are crucial for proper deployment)
 baseurl: ""  # Changed from "/test-blog" to "" for root domain
